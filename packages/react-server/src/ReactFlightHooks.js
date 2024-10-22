@@ -76,6 +76,7 @@ export const HooksDispatcher: Dispatcher = {
   useLayoutEffect: (unsupportedHook: any),
   useImperativeHandle: (unsupportedHook: any),
   useEffect: (unsupportedHook: any),
+  useResourceEffect: (unsupportedHook: any),
   useId,
   useSyncExternalStore: (unsupportedHook: any),
   useCacheRefresh(): <T>(?() => T, ?T) => void {

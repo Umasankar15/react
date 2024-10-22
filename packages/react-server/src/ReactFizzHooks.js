@@ -825,6 +825,7 @@ export const HooksDispatcher: Dispatcher = supportsClientAPIs
       useImperativeHandle: noop,
       // Effects are not run in the server environment.
       useEffect: noop,
+      useResourceEffect: noop,
       // Debugging effect
       useDebugValue: noop,
       useDeferredValue,
@@ -846,6 +847,7 @@ export const HooksDispatcher: Dispatcher = supportsClientAPIs
       useCallback,
       useImperativeHandle: clientHookNotSupported,
       useEffect: clientHookNotSupported,
+      useResourceEffect: clientHookNotSupported,
       useDebugValue: noop,
       useDeferredValue: clientHookNotSupported,
       useTransition: clientHookNotSupported,

@@ -248,3 +248,13 @@ export function useActionState<S, P>(
     return dispatcher.useActionState(action, initialState, permalink);
   }
 }
+
+export function useResourceEffect<Resource>(
+  create: () => (() => Resource) | void,
+  createDeps: Array<mixed> | void | null,
+  update: (resource: Resource) => (() => void) | void,
+  updateDeps: Array<mixed> | void | null,
+  destroy: (resource: Resource) => (() => void) | void,
+): void {
+  throw new Error('Not implemented.');
+}

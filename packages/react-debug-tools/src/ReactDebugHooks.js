@@ -420,6 +420,16 @@ function useEffect(
   });
 }
 
+export function useResourceEffect<Resource>(
+  create: () => (() => Resource) | void,
+  createDeps: Array<mixed> | void | null,
+  update: (resource: Resource) => (() => void) | void,
+  updateDeps: Array<mixed> | void | null,
+  destroy: (resource: Resource) => (() => void) | void,
+): void {
+  throw new Error('Not implemented.');
+}
+
 function useImperativeHandle<T>(
   ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
   create: () => T,
@@ -779,6 +789,7 @@ const Dispatcher: DispatcherType = {
   useContext,
   unstable_useContextWithBailout,
   useEffect,
+  useResourceEffect,
   useImperativeHandle,
   useDebugValue,
   useLayoutEffect,

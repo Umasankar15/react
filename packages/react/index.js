@@ -60,6 +60,7 @@ export {
   useDebugValue,
   useDeferredValue,
   useEffect,
+  useResourceEffect,
   experimental_useEffectEvent,
   useImperativeHandle,
   useInsertionEffect,
