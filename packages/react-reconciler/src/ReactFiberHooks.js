@@ -2639,6 +2639,27 @@ function updateEffect(
   updateEffectImpl(PassiveEffect, HookPassive, create, deps);
 }
 
+function mountResourceEffectImpl<Resource>(
+  fiberFlags: Flags,
+  hookFlags: HookFlags,
+  create: () => (() => Resource) | void,
+  createDeps: Array<mixed> | void | null,
+  update: (resource: Resource) => (() => void) | void,
+  updateDeps: Array<mixed> | void | null,
+  destroy: (resource: Resource) => (() => void) | void,
+): void {
+  const hook = mountWorkInProgressHook();
+  const nextDeps = createDeps === undefined ? null : createDeps;
+  currentlyRenderingFiber.flags |= fiberFlags;
+  // TODO>: FIGURE THIS OUT!!!!
+  // hook.memoizedState = pushEffect(
+  //   HookHasEffect | hookFlags,
+  //   create,
+  //   createEffectInstance(),
+  //   nextDeps,
+  // );
+}
+
 function mountResourceEffect<Resource>(
   create: () => (() => Resource) | void,
   createDeps: Array<mixed> | void | null,
@@ -2646,7 +2667,22 @@ function mountResourceEffect<Resource>(
   updateDeps: Array<mixed> | void | null,
   destroy: (resource: Resource) => (() => void) | void,
 ): void {
-  throw new Error('Not implemented.');
+  if (
+    __DEV__ &&
+    (currentlyRenderingFiber.mode & StrictEffectsMode) !== NoMode &&
+    (currentlyRenderingFiber.mode & NoStrictPassiveEffectsMode) === NoMode
+  ) {
+    throw new Error('Not implemented.');
+  }
+  mountResourceEffectImpl(
+    PassiveEffect | PassiveStaticEffect,
+    HookPassive,
+    create,
+    createDeps,
+    update,
+    updateDeps,
+    destroy,
+  );
 }
 
 function updateResourceEffect<Resource>(

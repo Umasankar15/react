@@ -84,7 +84,7 @@ describe('ReactResourceEffect', () => {
       root.render(<Parent roomId={1} username="Jack" />);
     });
     assertLog([]);
-    expect(root).toMatchRenderedOutput('Hello');
+    expect(root).toMatchRenderedOutput(<div>Hello</div>);
     assertLog(['Connection:connect(1, Jack)']);
     await act(() => {
       root.render(<Parent roomId={1} username="Lauren" />);
