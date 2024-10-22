@@ -67,7 +67,7 @@ describe('ReactResourceEffect', () => {
         return {username};
       }, [username]);
       useResourceEffect(
-        new ConnectionResource(roomId, opts), // create
+        () => new ConnectionResource(roomId, opts), // create
         [roomId, opts], // create deps
         connection => {
           connection.update(roomId, opts);
@@ -83,6 +83,7 @@ describe('ReactResourceEffect', () => {
     await act(() => {
       root.render(<Parent roomId={1} username="Jack" />);
     });
+    assertLog([]);
     expect(root).toMatchRenderedOutput('Hello');
     assertLog(['Connection:connect(1, Jack)']);
     await act(() => {

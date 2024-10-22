@@ -2639,11 +2639,23 @@ function updateEffect(
   updateEffectImpl(PassiveEffect, HookPassive, create, deps);
 }
 
-function mountResourceEffect() {
+function mountResourceEffect<Resource>(
+  create: () => (() => Resource) | void,
+  createDeps: Array<mixed> | void | null,
+  update: (resource: Resource) => (() => void) | void,
+  updateDeps: Array<mixed> | void | null,
+  destroy: (resource: Resource) => (() => void) | void,
+): void {
   throw new Error('Not implemented.');
 }
 
-function updateResourceEffect() {
+function updateResourceEffect<Resource>(
+  create: () => (() => Resource) | void,
+  createDeps: Array<mixed> | void | null,
+  update: (resource: Resource) => (() => void) | void,
+  updateDeps: Array<mixed> | void | null,
+  destroy: (resource: Resource) => (() => void) | void,
+): void {
   throw new Error('Not implemented.');
 }
 
@@ -4002,11 +4014,18 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      mountHookTypesDev();
+      checkDepsAreArrayDev(createDeps);
+      checkDepsAreArrayDev(updateDeps);
+      return mountResourceEffect(
+        create,
+        createDeps,
+        update,
+        updateDeps,
+        destroy,
+      );
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -4209,11 +4228,9 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      throw new Error('Not implemented.');
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -4413,11 +4430,9 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      throw new Error('Not implemented.');
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -4616,11 +4631,9 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      throw new Error('Not implemented.');
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -4826,11 +4839,9 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      throw new Error('Not implemented.');
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -5056,11 +5067,9 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      throw new Error('Not implemented.');
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -5286,11 +5295,9 @@ if (__DEV__) {
       update: (resource: Resource) => (() => void) | void,
       updateDeps: Array<mixed> | void | null,
       destroy: (resource: Resource) => (() => void) | void,
-    ) {
+    ): void {
       currentHookNameInDev = 'useResourceEffect';
-      if (__DEV__) {
-        console.error('not implemented yet');
-      }
+      throw new Error('Not implemented.');
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,

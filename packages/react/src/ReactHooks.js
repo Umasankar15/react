@@ -256,5 +256,12 @@ export function useResourceEffect<Resource>(
   updateDeps: Array<mixed> | void | null,
   destroy: (resource: Resource) => (() => void) | void,
 ): void {
-  throw new Error('Not implemented.');
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useResourceEffect(
+    create,
+    createDeps,
+    update,
+    updateDeps,
+    destroy,
+  );
 }
