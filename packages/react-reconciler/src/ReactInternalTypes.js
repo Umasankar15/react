@@ -413,12 +413,12 @@ export type Dispatcher = {
     deps: Array<mixed> | void | null,
   ): void,
   useEffectEvent?: <Args, F: (...Array<Args>) => mixed>(callback: F) => F,
-  useResourceEffect<Resource>(
-    create: () => (() => Resource) | void,
-    createDeps: Array<mixed> | void | null,
-    update: (resource: Resource) => (() => void) | void,
-    updateDeps: Array<mixed> | void | null,
-    destroy: (resource: Resource) => (() => void) | void,
+  useResourceEffect(
+    create: () => mixed,
+    createDeps: Array<mixed>,
+    update: (resource: mixed) => void,
+    updateDeps: Array<mixed>,
+    destroy: (resource: mixed) => void,
   ): void,
   useInsertionEffect(
     create: () => (() => void) | void,

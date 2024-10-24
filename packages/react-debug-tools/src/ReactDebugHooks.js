@@ -421,11 +421,11 @@ function useEffect(
 }
 
 export function useResourceEffect<Resource>(
-  create: () => (() => Resource) | void,
-  createDeps: Array<mixed> | void | null,
-  update: (resource: Resource) => (() => void) | void,
-  updateDeps: Array<mixed> | void | null,
-  destroy: (resource: Resource) => (() => void) | void,
+  create: () => Resource,
+  createDeps: Array<mixed>,
+  update: (resource: Resource) => void,
+  updateDeps: Array<mixed>,
+  destroy: (resource: Resource) => void,
 ): void {
   throw new Error('Not implemented.');
 }

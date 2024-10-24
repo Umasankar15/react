@@ -249,12 +249,12 @@ export function useActionState<S, P>(
   }
 }
 
-export function useResourceEffect<Resource>(
-  create: () => (() => Resource) | void,
-  createDeps: Array<mixed> | void | null,
-  update: (resource: Resource) => (() => void) | void,
-  updateDeps: Array<mixed> | void | null,
-  destroy: (resource: Resource) => (() => void) | void,
+export function useResourceEffect(
+  create: () => mixed,
+  createDeps: Array<mixed>,
+  update: (resource: mixed) => void,
+  updateDeps: Array<mixed>,
+  destroy: (resource: mixed) => void,
 ): void {
   const dispatcher = resolveDispatcher();
   return dispatcher.useResourceEffect(

@@ -223,8 +223,24 @@ export type Effect = {
   create: () => (() => void) | void,
   inst: EffectInstance,
   deps: Array<mixed> | null,
+  updateDeps: Array<mixed> | null,
   next: Effect,
 };
+
+type ResourceEffectInstance = {
+  update: mixed => mixed,
+  updateDeps: Array<mixed>,
+  destroy: mixed => void,
+};
+
+// type ResourceEffect = {
+//   kind: 'Resource',
+//   tag: HookFlags,
+//   create: () => mixed,
+//   inst: ResourceEffectInstance,
+//   deps: Array<mixed>,
+//   next: Effect | ResourceEffect,
+// };
 
 type StoreInstance<T> = {
   value: T,
@@ -2513,12 +2529,14 @@ function pushEffect(
   create: () => (() => void) | void,
   inst: EffectInstance,
   deps: Array<mixed> | null,
+  updateDeps: Array<mixed> | null,
 ): Effect {
   const effect: Effect = {
     tag,
     create,
     inst,
     deps,
+    updateDeps,
     // Circular
     next: (null: any),
   };
@@ -2570,6 +2588,7 @@ function mountEffectImpl(
     create,
     createEffectInstance(),
     nextDeps,
+    null,
   );
 }
 
@@ -2639,33 +2658,38 @@ function updateEffect(
   updateEffectImpl(PassiveEffect, HookPassive, create, deps);
 }
 
-function mountResourceEffectImpl<Resource>(
+function mountResourceEffectImpl(
   fiberFlags: Flags,
   hookFlags: HookFlags,
-  create: () => (() => Resource) | void,
-  createDeps: Array<mixed> | void | null,
-  update: (resource: Resource) => (() => void) | void,
-  updateDeps: Array<mixed> | void | null,
-  destroy: (resource: Resource) => (() => void) | void,
+  create: () => mixed,
+  createDeps: Array<mixed>,
+  updateDeps: Array<mixed>,
+  destroy: (resource: mixed) => void,
 ): void {
   const hook = mountWorkInProgressHook();
-  const nextDeps = createDeps === undefined ? null : createDeps;
   currentlyRenderingFiber.flags |= fiberFlags;
-  // TODO>: FIGURE THIS OUT!!!!
-  // hook.memoizedState = pushEffect(
-  //   HookHasEffect | hookFlags,
-  //   create,
-  //   createEffectInstance(),
-  //   nextDeps,
-  // );
+  hook.memoizedState = pushEffect(
+    HookHasEffect | hookFlags,
+    () => {
+      const resource = create();
+      hook.memoizedState.resource = resource;
+      return () => {
+        console.log('hi');
+        destroy(resource);
+      };
+    },
+    createEffectInstance(),
+    createDeps,
+    updateDeps,
+  );
 }
 
-function mountResourceEffect<Resource>(
-  create: () => (() => Resource) | void,
-  createDeps: Array<mixed> | void | null,
-  update: (resource: Resource) => (() => void) | void,
-  updateDeps: Array<mixed> | void | null,
-  destroy: (resource: Resource) => (() => void) | void,
+function mountResourceEffect(
+  create: () => mixed,
+  createDeps: Array<mixed>,
+  update: (resource: mixed) => void,
+  updateDeps: Array<mixed>,
+  destroy: (resource: mixed) => void,
 ): void {
   if (
     __DEV__ &&
@@ -2679,20 +2703,123 @@ function mountResourceEffect<Resource>(
     HookPassive,
     create,
     createDeps,
-    update,
     updateDeps,
     destroy,
   );
 }
 
 function updateResourceEffect<Resource>(
-  create: () => (() => Resource) | void,
-  createDeps: Array<mixed> | void | null,
-  update: (resource: Resource) => (() => void) | void,
-  updateDeps: Array<mixed> | void | null,
-  destroy: (resource: Resource) => (() => void) | void,
+  create: () => mixed,
+  createDeps: Array<mixed>,
+  update: (resource: mixed) => void,
+  updateDeps: Array<mixed>,
+  destroy: (resource: mixed) => void,
 ): void {
-  throw new Error('Not implemented.');
+  updateResourceEffectImpl(
+    PassiveEffect,
+    HookPassive,
+    create,
+    createDeps,
+    update,
+    updateDeps,
+    destroy,
+  );
+}
+
+function updateResourceEffectImpl(
+  fiberFlags: Flags,
+  hookFlags: HookFlags,
+  create: () => mixed,
+  createDeps: Array<mixed>,
+  update: (resource: mixed) => void,
+  updateDeps: Array<mixed>,
+  destroy: (resource: mixed) => void,
+): void {
+  const hook = updateWorkInProgressHook();
+  const effect: Effect = hook.memoizedState;
+  const inst = effect.inst;
+  const resource = hook.memoizedState.resource;
+
+  // currentHook is null on initial mount when rerendering after a render phase
+  // state update or for strict mode.
+  if (currentHook !== null) {
+    const prevEffect: Effect = currentHook.memoizedState;
+    const prevDeps = prevEffect.deps;
+    if (areHookInputsEqual(createDeps, prevDeps)) {
+      // If deps were not equal, then we would add HookHasEffect here...
+      hook.memoizedState = pushEffect(
+        hookFlags,
+        () => {
+          return () => {
+            console.log('1');
+            destroy(resource);
+          };
+        },
+        inst,
+        createDeps,
+        updateDeps,
+      );
+      return;
+    }
+    const prevUpdateDeps = prevEffect.updateDeps;
+    if (areHookInputsEqual(updateDeps, prevUpdateDeps)) {
+      hook.memoizedState = pushEffect(
+        hookFlags,
+        () => {
+          const newResource = update(resource);
+          return () => {
+            destroy(newResource);
+          };
+        },
+        inst,
+        createDeps,
+        updateDeps,
+      );
+      return;
+    }
+  }
+
+  currentlyRenderingFiber.flags |= fiberFlags;
+
+  effect.inst.destroy = () => {};
+  pushEffect(
+    hookFlags,
+    () => {
+      // console.log('2');
+      const resource = create();
+      return () => {
+        destroy(resource);
+      };
+    },
+    inst,
+    createDeps,
+    updateDeps,
+  );
+
+  /**
+   *
+   * TODO
+   * we need to push effects without HookHasEffects
+   *
+   * x0. Expand test coverage, every dep change combo
+   * x1. Store update/create deps in mount effect so we can compare
+   * 2. Compare update/create deps here. If they are the same, avoid HookHasEffect flag.
+   * 3. Ensure mount also pushes update effect. (null create, store the initial deps.)
+   *      #1 and #3 are the same?
+   */
+
+  hook.memoizedState = pushEffect(
+    HookHasEffect | hookFlags,
+    () => {
+      const newResource = update(resource);
+      return () => {
+        destroy(newResource);
+      };
+    },
+    inst,
+    createDeps,
+    updateDeps,
+  );
 }
 
 function useEffectEventImpl<Args, Return, F: (...Array<Args>) => Return>(
@@ -4045,11 +4172,11 @@ if (__DEV__) {
       return mountEffect(create, deps);
     },
     useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
       mountHookTypesDev();
@@ -4259,11 +4386,11 @@ if (__DEV__) {
       return mountEffect(create, deps);
     },
     useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
       throw new Error('Not implemented.');
@@ -4460,15 +4587,22 @@ if (__DEV__) {
       updateHookTypesDev();
       return updateEffect(create, deps);
     },
-    useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+    useResourceEffect(
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
-      throw new Error('Not implemented.');
+      updateHookTypesDev();
+      return updateResourceEffect(
+        create,
+        createDeps,
+        update,
+        updateDeps,
+        destroy,
+      );
     },
     useImperativeHandle<T>(
       ref: {current: T | null} | ((inst: T | null) => mixed) | null | void,
@@ -4662,11 +4796,11 @@ if (__DEV__) {
       return updateEffect(create, deps);
     },
     useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
       throw new Error('Not implemented.');
@@ -4870,11 +5004,11 @@ if (__DEV__) {
       return mountEffect(create, deps);
     },
     useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
       throw new Error('Not implemented.');
@@ -5098,11 +5232,11 @@ if (__DEV__) {
       return updateEffect(create, deps);
     },
     useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
       throw new Error('Not implemented.');
@@ -5326,11 +5460,11 @@ if (__DEV__) {
       return updateEffect(create, deps);
     },
     useResourceEffect<Resource>(
-      create: () => (() => Resource) | void,
-      createDeps: Array<mixed> | void | null,
-      update: (resource: Resource) => (() => void) | void,
-      updateDeps: Array<mixed> | void | null,
-      destroy: (resource: Resource) => (() => void) | void,
+      create: () => mixed,
+      createDeps: Array<mixed>,
+      update: (resource: mixed) => void,
+      updateDeps: Array<mixed>,
+      destroy: (resource: mixed) => void,
     ): void {
       currentHookNameInDev = 'useResourceEffect';
       throw new Error('Not implemented.');

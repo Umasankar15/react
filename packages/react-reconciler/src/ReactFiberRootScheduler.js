@@ -210,7 +210,10 @@ function flushSyncWorkAcrossRoots_impl(
           );
           if (
             includesSyncLane(nextLanes) &&
-            !checkIfRootIsPrerendering(root, nextLanes)
+            !(
+              enableSiblingPrerendering &&
+              checkIfRootIsPrerendering(root, nextLanes)
+            )
           ) {
             // This root has pending sync work. Flush it now.
             didPerformSomeWork = true;

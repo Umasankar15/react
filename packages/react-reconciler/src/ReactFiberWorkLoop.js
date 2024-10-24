@@ -2127,8 +2127,7 @@ function renderRootSync(
             break outer;
           }
           case SuspendedOnImmediate:
-          case SuspendedOnData:
-          case SuspendedOnDeprecatedThrowPromise: {
+          case SuspendedOnData: {
             if (getSuspenseHandler() === null) {
               didSuspendInShell = true;
             }
