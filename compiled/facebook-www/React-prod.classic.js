@@ -14,12 +14,10 @@
 var dynamicFeatureFlags = require("ReactFeatureFlags"),
   disableDefaultPropsExceptForClasses =
     dynamicFeatureFlags.disableDefaultPropsExceptForClasses,
-  disableStringRefs = dynamicFeatureFlags.disableStringRefs,
-  enableLogStringRefsProd = dynamicFeatureFlags.enableLogStringRefsProd,
   enableRenderableContext = dynamicFeatureFlags.enableRenderableContext,
   enableTransitionTracing = dynamicFeatureFlags.enableTransitionTracing,
+  enableUseResourceEffectHook = dynamicFeatureFlags.enableUseResourceEffectHook,
   renameElementSymbol = dynamicFeatureFlags.renameElementSymbol,
-  disableLegacyMode = dynamicFeatureFlags.disableLegacyMode,
   REACT_LEGACY_ELEMENT_TYPE = Symbol.for("react.element"),
   REACT_ELEMENT_TYPE = renameElementSymbol
     ? Symbol.for("react.transitional.element")
@@ -37,7 +35,6 @@ var dynamicFeatureFlags = require("ReactFeatureFlags"),
   REACT_MEMO_TYPE = Symbol.for("react.memo"),
   REACT_LAZY_TYPE = Symbol.for("react.lazy"),
   REACT_SCOPE_TYPE = Symbol.for("react.scope"),
-  REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
   REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
   REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
   REACT_TRACING_MARKER_TYPE = Symbol.for("react.tracing_marker"),
@@ -93,195 +90,42 @@ pureComponentPrototype.constructor = PureComponent;
 assign(pureComponentPrototype, Component.prototype);
 pureComponentPrototype.isPureReactComponent = !0;
 var isArrayImpl = Array.isArray,
-  REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference");
-function getComponentNameFromType(type) {
-  if (null == type) return null;
-  if ("function" === typeof type)
-    return type.$$typeof === REACT_CLIENT_REFERENCE
-      ? null
-      : type.displayName || type.name || null;
-  if ("string" === typeof type) return type;
-  switch (type) {
-    case REACT_FRAGMENT_TYPE:
-      return "Fragment";
-    case REACT_PORTAL_TYPE:
-      return "Portal";
-    case REACT_PROFILER_TYPE:
-      return "Profiler";
-    case REACT_STRICT_MODE_TYPE:
-      return "StrictMode";
-    case REACT_SUSPENSE_TYPE:
-      return "Suspense";
-    case REACT_SUSPENSE_LIST_TYPE:
-      return "SuspenseList";
-    case REACT_TRACING_MARKER_TYPE:
-      if (enableTransitionTracing) return "TracingMarker";
-  }
-  if ("object" === typeof type)
-    switch (type.$$typeof) {
-      case REACT_PROVIDER_TYPE:
-        if (enableRenderableContext) break;
-        else return (type._context.displayName || "Context") + ".Provider";
-      case REACT_CONTEXT_TYPE:
-        return enableRenderableContext
-          ? (type.displayName || "Context") + ".Provider"
-          : (type.displayName || "Context") + ".Consumer";
-      case REACT_CONSUMER_TYPE:
-        if (enableRenderableContext)
-          return (type._context.displayName || "Context") + ".Consumer";
-        break;
-      case REACT_FORWARD_REF_TYPE:
-        var innerType = type.render;
-        type = type.displayName;
-        type ||
-          ((type = innerType.displayName || innerType.name || ""),
-          (type = "" !== type ? "ForwardRef(" + type + ")" : "ForwardRef"));
-        return type;
-      case REACT_MEMO_TYPE:
-        return (
-          (innerType = type.displayName || null),
-          null !== innerType
-            ? innerType
-            : getComponentNameFromType(type.type) || "Memo"
-        );
-      case REACT_LAZY_TYPE:
-        innerType = type._payload;
-        type = type._init;
-        try {
-          return getComponentNameFromType(type(innerType));
-        } catch (x) {}
-    }
-  return null;
-}
-var ReactSharedInternals = { H: null, A: null, T: null, S: null },
+  ReactSharedInternals = { H: null, A: null, T: null, S: null, V: null },
   hasOwnProperty = Object.prototype.hasOwnProperty;
-function getComponentNameFromFiber(fiber) {
-  var type = fiber.type;
-  switch (fiber.tag) {
-    case 24:
-      return "Cache";
-    case 9:
-      return enableRenderableContext
-        ? (type._context.displayName || "Context") + ".Consumer"
-        : (type.displayName || "Context") + ".Consumer";
-    case 10:
-      return enableRenderableContext
-        ? (type.displayName || "Context") + ".Provider"
-        : (type._context.displayName || "Context") + ".Provider";
-    case 18:
-      return "DehydratedFragment";
-    case 11:
-      return (
-        (fiber = type.render),
-        (fiber = fiber.displayName || fiber.name || ""),
-        type.displayName ||
-          ("" !== fiber ? "ForwardRef(" + fiber + ")" : "ForwardRef")
-      );
-    case 7:
-      return "Fragment";
-    case 26:
-    case 27:
-    case 5:
-      return type;
-    case 4:
-      return "Portal";
-    case 3:
-      return "Root";
-    case 6:
-      return "Text";
-    case 16:
-      return getComponentNameFromType(type);
-    case 8:
-      return type === REACT_STRICT_MODE_TYPE ? "StrictMode" : "Mode";
-    case 22:
-      return "Offscreen";
-    case 12:
-      return "Profiler";
-    case 21:
-      return "Scope";
-    case 13:
-      return "Suspense";
-    case 19:
-      return "SuspenseList";
-    case 25:
-      return "TracingMarker";
-    case 17:
-    case 28:
-      if (disableLegacyMode) break;
-    case 1:
-    case 0:
-    case 14:
-    case 15:
-      if ("function" === typeof type)
-        return type.displayName || type.name || null;
-      if ("string" === typeof type) return type;
-      break;
-    case 23:
-      return "LegacyHidden";
-  }
-  return null;
-}
-function getOwner() {
-  if (!disableStringRefs) {
-    var dispatcher = ReactSharedInternals.A;
-    return null === dispatcher ? null : dispatcher.getOwner();
-  }
-  return null;
-}
-var didWarnAboutStringRefs;
-enableLogStringRefsProd && (didWarnAboutStringRefs = {});
-function ReactElement(type, key, _ref, self, source, owner, props) {
-  _ref = props.ref;
-  _ref = void 0 !== _ref ? _ref : null;
-  return disableStringRefs
-    ? {
-        $$typeof: REACT_ELEMENT_TYPE,
-        type: type,
-        key: key,
-        ref: _ref,
-        props: props
-      }
-    : {
-        $$typeof: REACT_ELEMENT_TYPE,
-        type: type,
-        key: key,
-        ref: _ref,
-        props: props,
-        _owner: owner
-      };
+function ReactElement(type, key, self, source, owner, props) {
+  self = props.ref;
+  return {
+    $$typeof: REACT_ELEMENT_TYPE,
+    type: type,
+    key: key,
+    ref: void 0 !== self ? self : null,
+    props: props
+  };
 }
 function jsxProd(type, config, maybeKey) {
   var key = null;
   void 0 !== maybeKey && (key = "" + maybeKey);
   void 0 !== config.key && (key = "" + config.key);
-  if ((!disableStringRefs && "ref" in config) || "key" in config) {
+  if ("key" in config) {
     maybeKey = {};
     for (var propName in config)
-      "key" !== propName &&
-        (disableStringRefs || "ref" !== propName
-          ? (maybeKey[propName] = config[propName])
-          : (maybeKey.ref = coerceStringRef(
-              config[propName],
-              getOwner(),
-              type
-            )));
+      "key" !== propName && (maybeKey[propName] = config[propName]);
   } else maybeKey = config;
   if (!disableDefaultPropsExceptForClasses && type && type.defaultProps) {
     config = type.defaultProps;
-    for (var propName$1 in config)
-      void 0 === maybeKey[propName$1] &&
-        (maybeKey[propName$1] = config[propName$1]);
+    for (var propName$0 in config)
+      void 0 === maybeKey[propName$0] &&
+        (maybeKey[propName$0] = config[propName$0]);
   }
-  return ReactElement(type, key, null, void 0, void 0, getOwner(), maybeKey);
+  return ReactElement(type, key, void 0, void 0, null, maybeKey);
 }
 function cloneAndReplaceKey(oldElement, newKey) {
   return ReactElement(
     oldElement.type,
     newKey,
-    null,
     void 0,
     void 0,
-    disableStringRefs ? void 0 : oldElement._owner,
+    void 0,
     oldElement.props
   );
 }
@@ -291,48 +135,6 @@ function isValidElement(object) {
     null !== object &&
     object.$$typeof === REACT_ELEMENT_TYPE
   );
-}
-function coerceStringRef(mixedRef, owner, type) {
-  if (disableStringRefs) return mixedRef;
-  if ("string" !== typeof mixedRef)
-    if ("number" === typeof mixedRef || "boolean" === typeof mixedRef)
-      mixedRef = "" + mixedRef;
-    else return mixedRef;
-  var callback = stringRefAsCallbackRef.bind(null, mixedRef, type, owner);
-  callback.__stringRef = mixedRef;
-  callback.__type = type;
-  callback.__owner = owner;
-  return callback;
-}
-function stringRefAsCallbackRef(stringRef, type, owner, value) {
-  if (!disableStringRefs) {
-    if (!owner)
-      throw Error(
-        "Element ref was specified as a string (" +
-          stringRef +
-          ") but no owner was set. This could happen for one of the following reasons:\n1. You may be adding a ref to a function component\n2. You may be adding a ref to a component that was not created inside a component's render method\n3. You have multiple copies of React loaded\nSee https://react.dev/link/refs-must-have-owner for more information."
-      );
-    if (1 !== owner.tag)
-      throw Error(
-        "Function components cannot have string refs. We recommend using useRef() instead. Learn more about using refs safely here: https://react.dev/link/strict-mode-string-ref"
-      );
-    enableLogStringRefsProd &&
-      ("function" !== typeof type ||
-        (type.prototype && type.prototype.isReactComponent)) &&
-      ((type = getComponentNameFromFiber(owner) || "Component"),
-      didWarnAboutStringRefs[type] ||
-        (enableLogStringRefsProd && enableLogStringRefsProd(type, stringRef),
-        (didWarnAboutStringRefs[type] = !0)));
-    owner = owner.stateNode;
-    if (!owner)
-      throw Error(
-        "Missing owner for string ref " +
-          stringRef +
-          ". This error is likely caused by a bug in React. Please file an issue."
-      );
-    owner = owner.refs;
-    null === value ? delete owner[stringRef] : (owner[stringRef] = value);
-  }
 }
 function escape(key) {
   var escaperLookup = { "=": "=0", ":": "=2" };
@@ -522,6 +324,16 @@ function lazyInitializer(payload) {
 function useMemoCache(size) {
   return ReactSharedInternals.H.useMemoCache(size);
 }
+function useResourceEffect(create, createDeps, update, updateDeps, destroy) {
+  if (!enableUseResourceEffectHook) throw Error("Not implemented.");
+  return ReactSharedInternals.H.useResourceEffect(
+    create,
+    createDeps,
+    update,
+    updateDeps,
+    destroy
+  );
+}
 var reportGlobalError =
   "function" === typeof reportError
     ? reportError
@@ -552,7 +364,10 @@ var reportGlobalError =
         console.error(error);
       };
 function noop() {}
-var ReactCompilerRuntime = { c: useMemoCache };
+var ReactCompilerRuntime = { __proto__: null, c: useMemoCache },
+  experimental_useResourceEffect = enableUseResourceEffectHook
+    ? useResourceEffect
+    : void 0;
 exports.Children = {
   map: mapChildren,
   forEach: function (children, forEachFunc, forEachContext) {
@@ -604,6 +419,7 @@ exports.cache = function (fn) {
     return fn.apply(null, arguments);
   };
 };
+exports.captureOwnerStack = void 0;
 exports.cloneElement = function (element, config, children) {
   if (null === element || void 0 === element)
     throw Error(
@@ -611,9 +427,9 @@ exports.cloneElement = function (element, config, children) {
     );
   var props = assign({}, element.props),
     key = element.key,
-    owner = disableStringRefs ? void 0 : element._owner;
+    owner = void 0;
   if (null != config) {
-    void 0 !== config.ref && (owner = disableStringRefs ? void 0 : getOwner());
+    void 0 !== config.ref && (owner = void 0);
     void 0 !== config.key && (key = "" + config.key);
     if (
       !disableDefaultPropsExceptForClasses &&
@@ -627,17 +443,12 @@ exports.cloneElement = function (element, config, children) {
         "__self" === propName ||
         "__source" === propName ||
         ("ref" === propName && void 0 === config.ref) ||
-        (disableDefaultPropsExceptForClasses ||
-        void 0 !== config[propName] ||
-        void 0 === defaultProps
-          ? disableStringRefs || "ref" !== propName
-            ? (props[propName] = config[propName])
-            : (props.ref = coerceStringRef(
-                config[propName],
-                owner,
-                element.type
-              ))
-          : (props[propName] = defaultProps[propName]));
+        (props[propName] =
+          disableDefaultPropsExceptForClasses ||
+          void 0 !== config[propName] ||
+          void 0 === defaultProps
+            ? config[propName]
+            : defaultProps[propName]);
   }
   var propName = arguments.length - 2;
   if (1 === propName) props.children = children;
@@ -646,7 +457,7 @@ exports.cloneElement = function (element, config, children) {
     for (var i = 0; i < propName; i++) defaultProps[i] = arguments[i + 2];
     props.children = defaultProps;
   }
-  return ReactElement(element.type, key, null, void 0, void 0, owner, props);
+  return ReactElement(element.type, key, void 0, void 0, owner, props);
 };
 exports.createContext = function (defaultValue) {
   defaultValue = {
@@ -680,9 +491,7 @@ exports.createElement = function (type, config, children) {
         "key" !== propName &&
         "__self" !== propName &&
         "__source" !== propName &&
-        (disableStringRefs || "ref" !== propName
-          ? (props[propName] = config[propName])
-          : (props.ref = coerceStringRef(config[propName], getOwner(), type)));
+        (props[propName] = config[propName]);
   var childrenLength = arguments.length - 2;
   if (1 === childrenLength) props.children = children;
   else if (1 < childrenLength) {
@@ -694,7 +503,7 @@ exports.createElement = function (type, config, children) {
     for (propName in ((childrenLength = type.defaultProps), childrenLength))
       void 0 === props[propName] &&
         (props[propName] = childrenLength[propName]);
-  return ReactElement(type, key, null, void 0, void 0, getOwner(), props);
+  return ReactElement(type, key, void 0, void 0, null, props);
 };
 exports.createRef = function () {
   return { current: null };
@@ -702,6 +511,7 @@ exports.createRef = function () {
 exports.experimental_useEffectEvent = function (callback) {
   return ReactSharedInternals.H.useEffectEvent(callback);
 };
+exports.experimental_useResourceEffect = experimental_useResourceEffect;
 exports.forwardRef = function (render) {
   return { $$typeof: REACT_FORWARD_REF_TYPE, render: render };
 };
@@ -748,7 +558,6 @@ exports.startTransition = function (scope, options) {
   }
 };
 exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
-exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
 exports.unstable_LegacyHidden = REACT_LEGACY_HIDDEN_TYPE;
 exports.unstable_Scope = REACT_SCOPE_TYPE;
 exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
@@ -759,9 +568,6 @@ exports.unstable_getCacheForType = function (resourceType) {
 };
 exports.unstable_useCacheRefresh = function () {
   return ReactSharedInternals.H.useCacheRefresh();
-};
-exports.unstable_useContextWithBailout = function (context, select) {
-  return ReactSharedInternals.H.unstable_useContextWithBailout(context, select);
 };
 exports.unstable_useMemoCache = useMemoCache;
 exports.use = function (usable) {
@@ -824,4 +630,4 @@ exports.useSyncExternalStore = function (
 exports.useTransition = function () {
   return ReactSharedInternals.H.useTransition();
 };
-exports.version = "19.0.0-www-classic-cae764ce-20241025";
+exports.version = "19.1.0-www-classic-221f3002-20250130";

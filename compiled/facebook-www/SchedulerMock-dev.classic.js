@@ -137,12 +137,9 @@ __DEV__ &&
             advanceTimers(initialTime);
             for (
               currentTask = peek(taskQueue);
-              !(
-                null === currentTask ||
-                isSchedulerPaused ||
-                (currentTask.expirationTime > initialTime &&
-                  (!hasTimeRemaining || shouldYieldToHost()))
-              );
+              null !== currentTask &&
+              (!(currentTask.expirationTime > initialTime) ||
+                (hasTimeRemaining && !shouldYieldToHost()));
 
             ) {
               var callback = currentTask.callback;
@@ -249,7 +246,6 @@ __DEV__ &&
       taskQueue = [],
       timerQueue = [],
       taskIdCounter = 1,
-      isSchedulerPaused = !1,
       currentTask = null,
       currentPriorityLevel = 3,
       isPerformingWork = !1,
@@ -321,12 +317,6 @@ __DEV__ &&
       yieldedValues = null;
       return values;
     };
-    exports.unstable_continueExecution = function () {
-      isSchedulerPaused = !1;
-      isHostCallbackScheduled ||
-        isPerformingWork ||
-        ((isHostCallbackScheduled = !0), (scheduledCallback = flushWork));
-    };
     exports.unstable_flushAll = function () {
       if (null !== yieldedValues)
         throw Error(
@@ -389,9 +379,6 @@ __DEV__ &&
     exports.unstable_getCurrentPriorityLevel = function () {
       return currentPriorityLevel;
     };
-    exports.unstable_getFirstCallbackNode = function () {
-      return peek(taskQueue);
-    };
     exports.unstable_hasPendingWork = function () {
       return null !== scheduledCallback;
     };
@@ -415,9 +402,6 @@ __DEV__ &&
     };
     exports.unstable_now = function () {
       return currentMockTime;
-    };
-    exports.unstable_pauseExecution = function () {
-      isSchedulerPaused = !0;
     };
     exports.unstable_requestPaint = function () {
       needsPaint = !0;

@@ -24,6 +24,7 @@ __DEV__ &&
               case REACT_STRICT_MODE_TYPE:
               case REACT_SUSPENSE_TYPE:
               case REACT_SUSPENSE_LIST_TYPE:
+              case REACT_VIEW_TRANSITION_TYPE:
                 return object;
               default:
                 switch (((object = object && object.$$typeof), object)) {
@@ -46,7 +47,6 @@ __DEV__ &&
       }
     }
     var dynamicFeatureFlags = require("ReactFeatureFlags"),
-      enableDebugTracing = dynamicFeatureFlags.enableDebugTracing,
       enableRenderableContext = dynamicFeatureFlags.enableRenderableContext,
       enableTransitionTracing = dynamicFeatureFlags.enableTransitionTracing;
     dynamicFeatureFlags = dynamicFeatureFlags.renameElementSymbol;
@@ -67,10 +67,10 @@ __DEV__ &&
       REACT_MEMO_TYPE = Symbol.for("react.memo"),
       REACT_LAZY_TYPE = Symbol.for("react.lazy"),
       REACT_SCOPE_TYPE = Symbol.for("react.scope"),
-      REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
       REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
       REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
       REACT_TRACING_MARKER_TYPE = Symbol.for("react.tracing_marker"),
+      REACT_VIEW_TRANSITION_TYPE = Symbol.for("react.view_transition"),
       REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference");
     exports.ContextConsumer = enableRenderableContext
       ? REACT_CONSUMER_TYPE
@@ -137,7 +137,6 @@ __DEV__ &&
         "function" === typeof type ||
         type === REACT_FRAGMENT_TYPE ||
         type === REACT_PROFILER_TYPE ||
-        (enableDebugTracing && type === REACT_DEBUG_TRACING_MODE_TYPE) ||
         type === REACT_STRICT_MODE_TYPE ||
         type === REACT_SUSPENSE_TYPE ||
         type === REACT_SUSPENSE_LIST_TYPE ||
